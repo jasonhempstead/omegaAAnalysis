@@ -1,0 +1,5 @@
+1. Create root file on grid using ClusterAndCoincidence module -> hadd
+2. Correct pileup using (python3 correct_pileup.py ourRootFile.root)
+3. Adjust config file as necessary (ourRootFile_pileup_corrected.root)
+4. Look into plots in jupyter notebook
+5. For more plots (python3 run_analysis.py sampleConf.json)

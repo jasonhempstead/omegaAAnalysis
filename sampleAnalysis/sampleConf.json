@@ -1,0 +1,78 @@
+{ 
+    "blinding_phrase": "sample omega a analysis; ask for the root file",
+
+    "hist_name": "clustersAndCoincidences/corrected",
+    "uncor_hist_name": "clustersAndCoincidences/uncorrected",
+    "file_name": "/Users/jasonhempstead/Desktop/omegaAFitting/sampleAnalysis/run2C_pileup_corrected_rand.root",
+
+    "loss_hist_name": "clustersAndCoincidences/triples",
+    "loss_file_name":" /Users/jasonhempstead/Desktop/omegaAFitting/sampleAnalysis/run2C_pileup_corrected_rand.root",
+
+    "fit_start": 30.2,
+    "closest_zero_crossing": true,
+
+    "fit_end": 400,
+    "extended_fit_end": 650,
+    "calo_range": [1, 24],
+
+    "fit_options": "q",
+
+    "fix_thresh_bin": false,
+    "thresh_bin": 85,
+
+    "field_index_mode": true,
+    
+    "no_pu_uncertainty_file" : "/Users/jasonhempstead/Desktop/omegaAFitting/run2/2CNoChangeCBO/randOut_pu_enhancements.txt",
+
+    "cbo_freq_params":
+    {
+        "model_num" : 1,
+        "m": 1,
+        "A": 0.0,
+        "B": 0.0,
+        "tau_a": 78.3,
+        "tau_b": 6.54,
+        "fix_slope": true
+    },
+
+    "fit_par_guesses" : [["#delta_{y}", 1.5], ["A_{y}", 0.00038], ["#delta_{y}", 0.9], ["#phi_{y}", 2.9],
+                         ["#phi_{2CBO}", -2.8], ["#tau_{2CBO}",150]],
+
+    "fit_par_limits": [["#tau_{CBO}", 100, 300], ["#tau_{vw}", 10, 50], ["#tau_{y}", 20, 250], 
+                       ["A_{y}", 0, 0.05], ["#delta_{y}", 0.0, 2], ["#delta_{vw}", -3, -0.5],
+                       ["A_{2CBO}", 0, 0.01], ["#tau_{2CBO}", 50, 250]],
+
+    "fit_par_fixes" : [],
+
+    "calo_sweep" : {
+        "fit_par_fixes": ["#tau_{vw}", "#delta_{vw}", "#tau_{y}", "#delta_{y}"],
+        "fit_par_limits": [["#tau_{2CBO}", 50, 400], ["A_{2CBO}", 0, 0.05]],
+        "fit_par_guesses": [["#phi_{2CBO}", 0]]
+    },
+
+    "E_binned_ana":
+    {
+        "min_E": 650,
+        "max_E": 2850,
+        "n_bins": 32,
+        "fit_par_fixes": ["#tau_{CBO}", "#tau_{vw}", "#delta_{vw}", "#tau_{y}", "#delta_{y}",
+                          "#tau_{2CBO}", "A_{2CBO}", "#phi_{2CBO}"],
+        "fit_par_limits": [],
+        "fit_par_guesses": []
+    },
+
+    "do_start_time_scans": false,
+
+    "start_time_scan":
+    {
+        "fit_par_fixes": ["A_{CBO, A}", "#phi_{CBO, A}", "A_{CBO, #phi}", "#phi_{CBO, #phi}",
+                          "A_{vw}", "#phi_{vw}", "#tau_{vw}", "#delta_{vw}", 
+                          "#tau_{y}", "A_{y}", "#phi_{y}", "#delta_{y}",
+                          "#tau_{2CBO}", "A_{2CBO}", "#phi_{2CBO}"],
+        "step": 0.25,
+        "n_pts": 250
+    },
+
+    "out_dir": "/Users/jasonhempstead/Desktop/hannahTestOmegaA/",
+    "outfile_name": "2CFits"
+}

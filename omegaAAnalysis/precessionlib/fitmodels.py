@@ -273,18 +273,15 @@ def clone_full_fit_tf1(full_fit, name):
     return new_fit
 
 
-def fit_pars_to_minimizer(full_fit, n_params = 0):
+def fit_pars_to_minimizer(full_fit):
     ''' copy the parameters from a full fit TF1
     into the global minimizer object '''
     r.buildMinimizer()
     minim = r.gROOT.GetGlobal('minimizer')
-    
-    if n_params == 0:
-        n_params = full_fit.GetNpar()
-    print(n_params)
-    for par_num in range(n_params):
+
+    for par_num in range(full_fit.GetNpar()):
         par_name = full_fit.GetParName(par_num)
-        if is_free_param(full_fit, par_num) and par_num < n_params:
+        if is_free_param(full_fit, par_num):
             old_val = full_fit.GetParameter(par_num)
             par_err = full_fit.GetParError(par_num)
 
@@ -381,7 +378,7 @@ def configure_model_fit(model_fit, model_name, conf):
     return model_fit
 
 
-def prepare_loss_hist(config, T_meth_hist, tau=64.43):
+def prepare_loss_hist(config, T_meth_hist, tau=64.44):
     '''prepare the muon loss histogram needed for fitting
     also make some plots'''
     lost_muon_rate_2d = get_histogram(
@@ -430,3 +427,27 @@ def prepare_loss_hist(config, T_meth_hist, tau=64.43):
 
     # return histograms
     return lost_muon_cumulative, lost_muon_rate, lost_muon_prob
+
+
+# CBO envelope hacks to get systematic scans done for February 2019 meeting
+
+
+def set_cbo_envelope(env_name):
+    r.setCBOEnvelopeNum(set_cbo_envelope.env_dict[env_name])
+
+
+set_cbo_envelope.env_dict = {
+    'exponential': 0,
+    'offsetExponential': 1,
+    'beamDynamics': 2,
+    'gaussian': 3
+}
+
+
+def get_cbo_envelope():
+    env_num = r.cboEnvNum
+    for key, value in set_cbo_envelope.env_dict.items():
+        if value == env_num:
+            return key
+
+    return 'invalid'

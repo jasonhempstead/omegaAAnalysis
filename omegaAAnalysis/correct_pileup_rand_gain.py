@@ -14,9 +14,9 @@ import numpy as np
 from precessionlib.calospectra import CaloSpectra
 from precessionlib.util import rebinned_last_axis
 
-gain_amp = 0.8e-3
-gain_tau = 64.43
-gain_asym = 0.16
+gain_amp = 0.5e-3
+gain_tau = 64.44
+gain_asym = 0.13
 
 
 def build_root_hists(filename, histname,

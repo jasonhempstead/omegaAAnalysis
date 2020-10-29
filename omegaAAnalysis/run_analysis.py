@@ -7,8 +7,7 @@
 from precessionlib import analysis
 import json
 import sys
-#from ROOT import gROOT
-#gROOT.SetStyle('ATLAS')
+
 
 def main():
     # with open('confArtificialGainCor.json') as file:

@@ -114,13 +114,13 @@ def build_pu_shifted_T_and_A(shift_in_bins, spec, fit_info, rebin=6):
                            f'pu shift {shift_in_bins}')
 
 #
-# Approximate IFG sweep code
+# Approximate IFG/STDP sweep code
 #
 
 
-def ifg_amplitude_sweep(config, conf_dir):
-    ''' run the IFG amplitude sweep '''
-    print('\n---\nApproximate IFG amplitude sweep\n---')
+def gain_amplitude_sweep(config, conf_dir, gain_type='IFG'):
+    ''' run the IFG/STDP amplitude sweep '''
+    print(f'\n---\nApproximate {gain_type} amplitude sweep\n---')
 
     raw_f, fit_info = load_raw_and_analyzed_files(config, conf_dir)
 
@@ -128,7 +128,7 @@ def ifg_amplitude_sweep(config, conf_dir):
     cor = raw_f.Get(config['cor_hist_name'])
     cor_2d = cor.Project3D('yx_1')
     r.SetOwnership(cor_2d, True)
-    cor_2d.SetName('IFGCorrected2D')
+    cor_2d.SetName(f'{gain_type}Corrected2D')
 
     try:
         # check if a separate uncorrected raw filename is specified
@@ -140,7 +140,7 @@ def ifg_amplitude_sweep(config, conf_dir):
     uncor = uncor_f.Get(config['uncor_hist_name'])
     uncor_2d = uncor.Project3D('yx_2')
     r.SetOwnership(uncor_2d, True)
-    uncor_2d.SetName('IFGUncorrected2D')
+    uncor_2d.SetName(f'{gain_type}Uncorrected2D')
 
     delta_rho = uncor_2d.Clone()
     delta_rho.SetName('delta_rho')
@@ -148,10 +148,10 @@ def ifg_amplitude_sweep(config, conf_dir):
     delta_rho.Add(cor_2d, -1)
 
     # run the scan
-    print('running approximate ifg amplitude scan...')
+    print(f'running approximate {gain_type} amplitude scan...')
     if config['scale_max'] < config['scale_min']:
         raise RuntimeError(
-            'Problem with IFG scan configuration!'
+            f'Problem with {gain_type} scan configuration!'
             '"scale_min" must be less than "scale_max"')
 
     scales = []
@@ -164,8 +164,8 @@ def ifg_amplitude_sweep(config, conf_dir):
     outs_A = []
     for scale in scales:
         print(f'scale {scale:.3f}....')
-        out_T, out_A = fit_ifg_scaled_T_and_A(
-            scale, cor_2d, delta_rho, fit_info, config)
+        out_T, out_A = fit_gain_scaled_T_and_A(
+            scale, cor_2d, delta_rho, fit_info, config, gain_type)
         outs_T.append(out_T)
         outs_A.append(out_A)
 
@@ -178,30 +178,34 @@ def ifg_amplitude_sweep(config, conf_dir):
     A_R_range = outs_A[-1][1].GetParameter(4) - outs_A[0][1].GetParameter(4)
     A_sens = A_R_range / scale_range
 
-    print('\nIFG amplitude scan summary:')
-    print(f'T-Method sensitivity: {T_sens*1000:.1f} ppb / IFG correction')
-    print(f'A-Weighted sensitivity: {A_sens*1000:.1f} ppb / IFG correction')
+    print(f'\n{gain_type} amplitude scan summary:')
+    print(f'T-Method sensitivity: {T_sens*1000:.1f} ppb / '
+          f'{gain_type} correction')
+    print(f'A-Weighted sensitivity: {A_sens*1000:.1f} ppb / '
+          f'{gain_type} correction')
 
     return outs_T, outs_A, scales
 
 
-def build_ifg_scaled_T_and_A(scale_factor, cor_2d, delta_rho, fit_info):
+def build_gain_scaled_T_and_A(scale_factor, cor_2d, delta_rho,
+                              fit_info, gain_type):
     scaled_2d = cor_2d.Clone()
     scaled_2d.SetName(f'scaled2D_{scale_factor}')
     scaled_2d.Add(delta_rho, float(1 - scale_factor))
 
     return T_and_A_from_2d(scaled_2d, fit_info, f'Scaled{scale_factor:.3f}',
-                           f'IFG scale {scale_factor}')
+                           f'{gain_type} scale {scale_factor}')
 
 
-def fit_ifg_scaled_T_and_A(scale_factor, cor_2d, delta_rho, fit_info, config):
+def fit_gain_scaled_T_and_A(scale_factor, cor_2d, delta_rho,
+                            fit_info, config, gain_type):
     _ = r.TCanvas()
 
-    hist_T, hist_A = build_ifg_scaled_T_and_A(
-        scale_factor, cor_2d, delta_rho, fit_info)
+    hist_T, hist_A = build_gain_scaled_T_and_A(
+        scale_factor, cor_2d, delta_rho, fit_info, gain_type)
 
     return fit_T_and_A(hist_T, hist_A, fit_info,
-                       config, f'ifg_scale_{scale_factor}')
+                       config, f'{gain_type}_scale_{scale_factor}')
 
 
 #
@@ -822,8 +826,17 @@ def run_systematic_sweeps(conf_name):
     ifg_amp_conf = config.get('ifg_amplitude_scan')
     ifg_amp_out = None
     if ifg_amp_conf is not None and ifg_amp_conf['run_scan']:
-        ifg_amp_out = ifg_amplitude_sweep(ifg_amp_conf, config_dir)
+        ifg_amp_out = gain_amplitude_sweep(ifg_amp_conf, config_dir,
+                                           gain_type="IFG")
         print('\n---\nIFG amplitude sweep done\n---\n')
+
+    # stdp amplitude sweep
+    stdp_amp_conf = config.get('stdp_amplitude_scan')
+    stdp_amp_out = None
+    if stdp_amp_conf is not None and stdp_amp_conf['run_scan']:
+        stdp_amp_out = gain_amplitude_sweep(stdp_amp_conf, config_dir,
+                                            gain_type="STDP")
+        print('\n---\nSTDP amplitude sweep done\n---\n')
 
     # residual gain correction scans
     resid_g_conf = config.get('residual_gain_correction')
@@ -875,6 +888,10 @@ def run_systematic_sweeps(conf_name):
     if ifg_amp_out is not None:
         make_output_dir(outf, *ifg_amp_out, 'ifgAmpSweep',
                         'IFG amplitude multiplier')
+
+    if stdp_amp_out is not None:
+        make_output_dir(outf, *stdp_amp_out, 'stdpAmpSweep',
+                        'STDP amplitude multiplier')
 
     if resid_g_amp_out is not None:
         resid_g_dir = outf.mkdir('residualGainSweeps')

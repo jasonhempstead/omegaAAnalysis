@@ -21,7 +21,7 @@ e_sweep_dirname = 'energyBinnedPlots'
 
 
 def do_threshold_sweep(all_calo_2d, fit_function, fit_start, fit_end,
-                       start_thresh=1800, twoDHist = True):
+                       start_thresh=1700):
     ''' finds the optimal T-Method threshold
         returns:
         (best_threshold, [(thresh1, r_precision1, thresh2, preceision2),...])
@@ -33,11 +33,8 @@ def do_threshold_sweep(all_calo_2d, fit_function, fit_start, fit_end,
 
     r_precisions = []
     best_thresh = None
-    for e_bin in range(thresh_bin - 50, thresh_bin + 30):
-        if twoDHist:
-            this_proj = all_calo_2d.ProjectionX(f'proj{e_bin}', e_bin, -1)
-        else:
-            this_proj = all_calo_2d
+    for e_bin in range(thresh_bin - 30, thresh_bin + 30):
+        this_proj = all_calo_2d.ProjectionX(f'proj{e_bin}', e_bin, -1)
 
         if fit_function.GetParameter(0) == 0:
             fit_function.SetParameter(
@@ -688,7 +685,7 @@ def build_A_vs_E_spline(a_vs_e, phi_vs_e, deriv_cut=0.01):
 
 
 def build_a_weight_hist(spec_2d, a_vs_e_spline, name,
-                        min_e=1000, max_e=3000, energyWeighted = False):
+                        min_e=1000, max_e=3000):
     ''' builds an asymmetry weighted histogram,
     pretty self explanatory
     '''
@@ -715,10 +712,8 @@ def build_a_weight_hist(spec_2d, a_vs_e_spline, name,
         r.SetOwnership(energy_slice, True)
 
         energy = spec_2d.GetYaxis().GetBinCenter(e_bin)
-        if energyWeighted:
-            a_weight_hist.Add(energy_slice, energy)
-        else:
-            a_weight_hist.Add(energy_slice, a_vs_e_spline.Eval(energy))
+
+        a_weight_hist.Add(energy_slice, a_vs_e_spline.Eval(energy))
 
     return a_weight_hist
 
@@ -908,7 +903,6 @@ def plot_loss_hists(lost_muon_rate,
         lost_muon_rate.GetMaximum() / plot_cumulative.GetMaximum())
 
     c = r.TCanvas()
-    lost_muon_rate.SetLineColor(r.kCyan)
     lost_muon_rate.Draw('hist')
     lost_muon_rate.SetTitle('')
     lost_muon_rate.GetXaxis().SetRangeUser(0, 300)

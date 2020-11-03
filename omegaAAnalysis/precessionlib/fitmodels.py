@@ -136,7 +136,7 @@ def build_losses_func(vw_f, config):
     return with_losses_tf1
 
 
-def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
+def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.1492):
     '''build a full fit TF1, including CBO modulation of N, phi
     and changing CBO frequency
     this is implemented as a ROOT function in fitFunctions.C'''
@@ -159,6 +159,7 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
     full_fit_tf1.SetParName(7, 'A_{CBO}')
     full_fit_tf1.SetParName(8, '#phi_{CBO}')
 
+    #full_fit_tf1.FixParameter(10, 1.0) this is tau_vw
     AcAs_to_APhi(full_fit_tf1, 11, 12)
     full_fit_tf1.SetParName(11, 'A_{vw}')
     full_fit_tf1.SetParName(12, '#phi_{vw}')
@@ -168,9 +169,9 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
     full_fit_tf1.SetParName(16, '#phi_{CBO, A}')
     full_fit_tf1.SetParName(17, 'A_{CBO, #phi}')
     full_fit_tf1.SetParName(18, '#phi_{CBO, #phi}')
-    full_fit_tf1.SetParName(19, 'd#omega_{CBO}/dt')
+    # full_fit_tf1.SetParName(19, 'd#omega_{CBO}/dt')
 
-    for par_num in range(15, 20):
+    for par_num in range(15, 19):
         full_fit_tf1.SetParameter(par_num, 0)
 
     # frequency slope
@@ -179,10 +180,11 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
     full_fit_tf1.SetParName(31, 'Tracker Model Number')
     full_fit_tf1.FixParameter(31, freq_params['model_num'])
 
-    if freq_params['fix_slope']:
+    """if freq_params['fix_slope']:
         full_fit_tf1.FixParameter(19, freq_params['m'])
     else:
-        full_fit_tf1.SetParameter(19, freq_params['m'])
+        full_fit_tf1.SetParameter(19, freq_params['m'])"""
+    # also removing the omega_cbo slope for now
 
     try:
         full_fit_tf1.SetParameter(9, freq_params['freq_guess'])
@@ -190,32 +192,40 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
         pass
 
     # parameters 20-23 come from the trackers
-    full_fit_tf1.FixParameter(20, freq_params['A'])
-    full_fit_tf1.FixParameter(21, freq_params['B'])
-    full_fit_tf1.FixParameter(22, freq_params['tau_a'])
-    full_fit_tf1.FixParameter(23, freq_params['tau_b'])
-
+    full_fit_tf1.FixParameter(19, freq_params['A'])
+    full_fit_tf1.FixParameter(20, freq_params['tau_a'])
+    # full_fit_tf1.FixParameter(22, freq_params['B'])
+    # full_fit_tf1.FixParameter(23, freq_params['tau_b'])
+    # removing some of the tracker model parameters for early run 2 fitting
+    
     # parameters 24-26 are the 2 omega_cbo parameters
     # can be important for fitting single calorimeters
 
     # start by fixing them, but we can release them
     # for the single calorimeter fits
-    full_fit_tf1.SetParName(24, '#tau_{2CBO}')
-    full_fit_tf1.FixParameter(24, full_fit_tf1.GetParameter(6) / 2)
-    full_fit_tf1.SetParName(25, 'A_{2CBO}')
-    full_fit_tf1.FixParameter(25, 0)
-    full_fit_tf1.SetParName(26, '#phi_{2CBO}')
-    full_fit_tf1.FixParameter(26, 0)
+    full_fit_tf1.SetParName(21, 'A_{CBO, 2}')
+    #full_fit_tf1.FixParameter(21, 0)
+    full_fit_tf1.SetParName(22, '#phi_{CBO, 2}')
+    #full_fit_tf1.FixParameter(22, 0)
+    
+    """full_fit_tf1.SetParName(24, '#tau_{2CBO}')
+    full_fit_tf1.FixParameter(24, full_fit_tf1.GetParameter(6) / 2)"""
+    full_fit_tf1.SetParName(23, 'A_{2CBO}')
+    #full_fit_tf1.FixParameter(23, 0)
+    full_fit_tf1.SetParName(24, '#phi_{2CBO}')
+    #full_fit_tf1.FixParameter(24, 0)
 
     # now set vertical betatron parameters.
     # These default to being effectively excluded from the fit
     include_y_osc = config.get('include_y_osc', False)
 
     # vertical betatron oscillations
-    full_fit_tf1.SetParName(27, '#tau_{y}')
-    full_fit_tf1.SetParName(28, 'A_{y}')
-    full_fit_tf1.SetParName(29, '#phi_{y}')
-    full_fit_tf1.SetParName(30, '#omega_{y}')
+    full_fit_tf1.SetParName(25, '#tau_{y}')
+    full_fit_tf1.SetParName(26, 'A_{y}')
+    full_fit_tf1.SetParName(27, '#phi_{y}')
+    full_fit_tf1.SetParName(28, '#omega_{y}')
+    full_fit_tf1.SetParName(29, 'A_{y, 2}')
+    full_fit_tf1.SetParName(30, '#phi_{y, 2}')
 
     if include_y_osc:
         cbo_freq = full_fit_tf1.GetParameter(9) / 2 / math.pi
@@ -223,17 +233,17 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.149):
         w_y = 2 * math.pi * y_freq
 
         full_fit_tf1.SetParameter(
-            27, cbo_freq / y_freq * full_fit_tf1.GetParameter(6))
-        full_fit_tf1.SetParameter(28, 0.0001)
-        full_fit_tf1.SetParameter(29, 0)
-        full_fit_tf1.SetParameter(30, w_y)
+            25, cbo_freq / y_freq * full_fit_tf1.GetParameter(6))
+        full_fit_tf1.SetParameter(26, 0.0001)
+        full_fit_tf1.SetParameter(27, 0)
+        full_fit_tf1.SetParameter(28, w_y)
 
     else:
-        for par_num in range(27, 31):
+        for par_num in range(25, 31):
             full_fit_tf1.FixParameter(par_num, 0)
 
     full_fit_tf1.SetNpx(10000)
-    full_fit_tf1.SetLineColor(r.kRed)
+    full_fit_tf1.SetLineColor(r.kViolet)
 
     # whether to switch to "use field index" mode
     full_fit_tf1.SetParName(32, 'Use Field Index Mode')
@@ -268,7 +278,7 @@ def clone_full_fit_tf1(full_fit, name):
     copy_all_parameters(full_fit, new_fit)
 
     new_fit.SetNpx(10000)
-    new_fit.SetLineColor(r.kRed)
+    new_fit.SetLineColor(r.kViolet)
 
     return new_fit
 

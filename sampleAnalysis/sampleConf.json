@@ -20,29 +20,27 @@
     "fix_thresh_bin": false,
     "thresh_bin": 85,
 
-    "field_index_mode": true,
+    "field_index_mode": false,
     
     "no_pu_uncertainty_file" : "/Users/jasonhempstead/Desktop/omegaAFitting/run2/2CNoChangeCBO/randOut_pu_enhancements.txt",
 
     "cbo_freq_params":
     {
-        "model_num" : 1,
-        "m": 1,
-        "A": 0.0,
-        "B": 0.0,
-        "tau_a": 78.3,
-        "tau_b": 6.54,
-        "fix_slope": true
+        "model_num" : 2,
+        "no_m": 1,
+        "A": 6.87,
+        "no_B": 0.0,
+        "tau_a": 6.0,
+        "no_tau_b": 6.54,
+        "no_fix_slope": true
     },
 
-    "fit_par_guesses" : [["#delta_{y}", 1.5], ["A_{y}", 0.00038], ["#delta_{y}", 0.9], ["#phi_{y}", 2.9],
-                         ["#phi_{2CBO}", -2.8], ["#tau_{2CBO}",150]],
+    "fit_par_guesses" : [ ["#omega_{y}", 13.0], ["#tau_{y}", 80.0],
+			  ["#tau_{CBO}", 266.4]],
 
-    "fit_par_limits": [["#tau_{CBO}", 100, 300], ["#tau_{vw}", 10, 50], ["#tau_{y}", 20, 250], 
-                       ["A_{y}", 0, 0.05], ["#delta_{y}", 0.0, 2], ["#delta_{vw}", -3, -0.5],
-                       ["A_{2CBO}", 0, 0.01], ["#tau_{2CBO}", 50, 250]],
+    "fit_par_limits": [],
 
-    "fit_par_fixes" : [],
+    "fit_par_fixes" : [["A_{y, 2}", 0.0], ["#phi_{y, 2}",0.0]],
 
     "calo_sweep" : {
         "fit_par_fixes": ["#tau_{vw}", "#delta_{vw}", "#tau_{y}", "#delta_{y}"],

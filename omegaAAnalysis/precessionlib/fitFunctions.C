@@ -2,7 +2,6 @@
 //
 // Aaron Fienberg
 // September 2018
-// triggering rebuild
 
 #include <iostream>
 
@@ -91,6 +90,20 @@ double cbo_model_elba(double w_cbo, double t, const double* p) {
   }
 }
 
+//see https://muon.npl.washington.edu/elog/g2/Tracking+Analysis/205
+double cbo_model_run2(double w_cbo, double t, const double* p) {
+  const double cbo_exp_a = p[0];
+  const double tau_a = p[1];
+    
+  static constexpr double cutoff_t = 1;
+  if (t >= cutoff_t) {
+    return w_cbo + cbo_exp_a * exp(-t / tau_a) / t;
+  } else {
+    return cbo_model_run2(w_cbo, cutoff_t, p);
+  }
+
+}
+
 // approximate is ok ;)
 constexpr double omega_c = 42.1153248017936;
 
@@ -115,7 +128,7 @@ double full_wiggle_fit(const double* x, const double* p) {
   const double phi_cbo = p[8];
   // w_cbo will be modified by tracker model
   double w_cbo = p[9];
-  const double tau_vw = p[10];
+  const double tau_vw = p[10]; //won't be used, but we can still import it, i guess
   const double A_vw = p[11];
   const double phi_vw = p[12];
   // could be updated if we are fitting in
@@ -134,19 +147,25 @@ double full_wiggle_fit(const double* x, const double* p) {
   // right now (0-1) means original model
   // (1-2) means Elba model
   // ... these parameters are currently in the order I added things
+    
+  //Nov 2020, unclear what we'll need as far as tracker model moving forward
   const unsigned int trackerModelNum = p[31];
   if (trackerModelNum == 0) {
     w_cbo = cbo_model_original(w_cbo, t, p + 19);
   } else if (trackerModelNum == 1) {
-    w_cbo = cbo_model_elba(w_cbo, t, p + 19);
+    w_cbo = cbo_model_elba(w_cbo, t, p + 19); //currently in use, double exponential; chag
+  } else if (trackerModelNum == 2) {
+    w_cbo = cbo_model_run2(w_cbo, t, p + 19); //going to steal back some parameters for moments-based fitting
   } else {
     std::cerr << "Invalid trackerModelNum!" << std::endl;
   }
 
   // double omega_CBO parameters on the n term
-  const double tau_2cbo = p[24];
-  const double A_2cbo = p[25];
-  const double phi_2cbo = p[26];
+  //const double tau_2cbo = p[24]; won't need with moments-based
+  const double A_2cbo = p[23];
+  const double phi_2cbo = p[24];
+  const double A_cbo2 = p[21]; // be careful, this might fail depending on tracker model; will fix later
+  const double phi_cbo2 = p[22]; // same as above
 
   // parameter 32 encodes whether we're fitting in "use field index"
   // mode. if so, the changing CBO frequency is mapped to an n-value
@@ -165,14 +184,20 @@ double full_wiggle_fit(const double* x, const double* p) {
     w_vw = (1 + delta_vw / 100) * omega_c * (1 - 2 * sqrt(field_index));
   }
 
-  const double N_vw = 1 + exp(-t / tau_vw) * (A_vw * cos(w_vw * t - phi_vw));
+  //const double N_vw = 1 + exp(-t / tau_vw) * (A_vw * cos(w_vw * t - phi_vw));
 
   // vertical betatron oscillations
-  const double tau_y = p[27];
-  const double A_y = p[28];
-  const double phi_y = p[29];
+  const double tau_y = p[25];
+  const double A_y = p[26];
+  const double phi_y = p[27];
 
-  double w_y = p[30];
+  double w_y = p[28];
+    
+  const double A_y2 = p[29];
+  const double phi_y2 = p[30];
+
+  // same warnings as above, be careful with the different tracker models; i recommend "2" while testing the moments-based fitting
+    
   if (A_y != 0 && use_field_index_flag) {
     // now p[30] is the y "fudge factor"
     // same definition as for vw
@@ -180,20 +205,32 @@ double full_wiggle_fit(const double* x, const double* p) {
     w_y = (1 + delta_y / 100) * omega_c * sqrt(field_index);
   }
 
-  const double N_y =
-      A_y != 0 ? 1 + exp(-t / tau_y) * (A_y * cos(w_y * t - phi_y)) : 1;
+  //const double N_y =
+  //    A_y != 0 ? 1 + exp(-t / tau_y) * (A_y * cos(w_y * t - phi_y)) : 1;
 
   // assymetry/phase modulation
-  A = A * (1 + cboEnvelope(t, tau_cbo) * A_cboa * cos(w_cbo * t - phi_cboa));
-  phi = phi + cboEnvelope(t, tau_cbo) * A_cbophi * cos(w_cbo * t - phi_cbophi);
+  A = A * (1 + A_cboa * exp(-t / tau_cbo) * cos(w_cbo * t - phi_cboa)); //removed CBO envelope
+  phi = phi + A_cbophi * exp(-t / tau_cbo) * cos(w_cbo * t - phi_cbophi); //removed CBO envelope
 
-  const double N_cbo =
+  /*const double N_cbo =
       1 + cboEnvelope(t, tau_cbo) * (A_cbo * cos(w_cbo * t - phi_cbo));
 
   const double N_2cbo =
-      1 + exp(-t / tau_2cbo) * (A_2cbo * cos(2 * w_cbo * t - phi_2cbo));
+      1 + exp(-t / tau_2cbo) * (A_2cbo * cos(2 * w_cbo * t - phi_2cbo));*/
+    
+  const double N_x =
+      1 + exp(-t / tau_cbo) * (A_cbo * cos(w_cbo * t - phi_cbo) )
+        + exp(-2*t / tau_cbo) * ( A_cbo2 * cos(w_cbo * t - phi_cbo2) +
+                                 A_2cbo * cos(2 * w_cbo * t - phi_2cbo)); //also removed cboEnvelope
+    
+  const double N_y =
+      1 + exp(-t / tau_y) * (A_y * cos(w_y * t - phi_y))
+        + exp(-2*t / tau_y) * A_y2 * cos(w_y * t - phi_y2) +
+        + exp(-t / tau_vw) * A_vw * cos(w_vw*t - phi_vw); //removed envelope
 
-  const double N = N_0 * N_cbo * N_2cbo * N_loss * N_vw * N_y;
+  const double N = N_0 * N_x * N_loss * N_y;
+    //Former N_vw and N_y combined to one term (N_y)
+    //N_cbo and N_2cbo combined to one term (N_x)
 
   const double wa = wa_ref * (1 + R * 1e-6);
 

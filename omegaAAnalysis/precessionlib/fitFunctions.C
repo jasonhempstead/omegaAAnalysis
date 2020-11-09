@@ -104,6 +104,14 @@ double cbo_model_run2(double w_cbo, double t, const double* p) {
 
 }
 
+//see https://gm2-docdb.fnal.gov/cgi-bin/private/RetrieveFile?docid=24197
+double kicker_eddy_current(double wa, double phi, double t, const double* p){
+    const double eddy_tau = p[1];
+    const double eddy_Delta = p[0]*1e-9; // convert to ppb
+    
+    return phi - wa*eddy_tau*eddy_Delta* (1 - exp(-t / eddy_tau) );
+}
+
 // approximate is ok ;)
 constexpr double omega_c = 42.1153248017936;
 
@@ -113,7 +121,7 @@ double n_of_omega_CBO(double omega_cbo) {
 }
 
 // constexpr unsigned int n_full_fit_parameters = 27;
-constexpr unsigned int n_full_fit_parameters = 33;
+constexpr unsigned int n_full_fit_parameters = 36;
 double full_wiggle_fit(const double* x, const double* p) {
   const double t = x[0];
   const double N_0 = p[0];
@@ -182,6 +190,17 @@ double full_wiggle_fit(const double* x, const double* p) {
     const double delta_vw = p[13];
     field_index = n_of_omega_CBO(w_cbo);
     w_vw = (1 + delta_vw / 100) * omega_c * (1 - 2 * sqrt(field_index));
+  }
+    
+  const unsigned int kickerModelNum = p[33];
+  if (kickerModelNum == 0) {
+      //do nothing for now
+  } else if(kickerModelNum == 1){
+      //alter accumulated phase and omega_a based on eddy current perturbation of field
+      
+      phi = kicker_eddy_current(wa_ref, phi, t, p+34);//need to change this function a bit
+  } else {
+      std::cerr << "Invalid kicker eddy current model number!!" << std::endl;
   }
 
   //const double N_vw = 1 + exp(-t / tau_vw) * (A_vw * cos(w_vw * t - phi_vw));

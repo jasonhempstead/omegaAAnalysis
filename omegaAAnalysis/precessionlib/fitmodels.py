@@ -249,6 +249,18 @@ def build_full_fit_tf1(loss_f, config, name='fullFit', f_c=1.0 / 0.1492):
     full_fit_tf1.SetParName(32, 'Use Field Index Mode')
     use_field_index = config.get('field_index_mode', False)
     full_fit_tf1.FixParameter(32, 1.0 if use_field_index else 0.0)
+    
+    
+    eddy_params = config['eddy_current_params']
+    
+    full_fit_tf1.SetParName(33, 'Eddy Current Model')
+    full_fit_tf1.FixParameter(33, eddy_params['model_num'])
+    
+    full_fit_tf1.SetParName(34, '#Delta_{B}')
+    full_fit_tf1.SetParName(35, '#tau_{B}')
+    # parameters 34,35 come from the kicker magnetometer
+    full_fit_tf1.FixParameter(34, eddy_params['delta_b'])
+    full_fit_tf1.FixParameter(35, eddy_params['tau_b'])
 
     if use_field_index:
         # switch to field index mode

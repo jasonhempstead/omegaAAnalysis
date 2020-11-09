@@ -3,10 +3,10 @@
 
     "hist_name": "clustersAndCoincidences/corrected",
     "uncor_hist_name": "clustersAndCoincidences/uncorrected",
-    "file_name": "/Users/jasonhempstead/Desktop/omegaAFitting/sampleAnalysis/run2C_pileup_corrected_rand.root",
+    "file_name": "/Users/jasonhempstead/Desktop/omegaAFitting/run2/AvsT/origFiles/fullRun2Fun_pileup_corrected.root",
 
     "loss_hist_name": "clustersAndCoincidences/triples",
-    "loss_file_name":" /Users/jasonhempstead/Desktop/omegaAFitting/sampleAnalysis/run2C_pileup_corrected_rand.root",
+    "loss_file_name":" /Users/jasonhempstead/Desktop/omegaAFitting/run2/AvsT/origFiles/fullRun2Fun_pileup_corrected.root",
 
     "fit_start": 30.2,
     "closest_zero_crossing": true,
@@ -33,6 +33,13 @@
         "tau_a": 6.0,
         "no_tau_b": 6.54,
         "no_fix_slope": true
+    },
+
+    "eddy_current_params":
+    {
+      "model_num" : 1,
+      "delta_b"   : -200,
+      "tau_b"     : 60.0
     },
 
     "fit_par_guesses" : [ ["#omega_{y}", 13.0], ["#tau_{y}", 80.0],
